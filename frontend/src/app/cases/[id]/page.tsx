@@ -43,7 +43,9 @@ export default function CaseDetailsPage() {
     try {
       const data = await api.getCase(caseId);
       setCaseData(data);
-      // Backend returns images array attached or we get matches
+      if (data && (data as any).images && Array.isArray((data as any).images)) {
+        setImages((data as any).images);
+      }
     } catch {
       // ignore
     } finally {
@@ -277,16 +279,16 @@ export default function CaseDetailsPage() {
                     Mathematical representations used to match public re-uploads and crops.
                   </p>
                 </div>
-                <BadgePill>{images.length} Fingerprints</BadgePill>
+                <BadgePill>{(images || []).length} Fingerprints</BadgePill>
               </div>
 
-              {images.length === 0 ? (
+              {(images || []).length === 0 ? (
                 <div className="p-8 text-center text-xs text-muted">
                   No images fingerprinted yet. Upload your source file above to begin matching.
                 </div>
               ) : (
                 <div className="divide-y divide-hairline">
-                  {images.map((img) => (
+                  {(images || []).map((img) => (
                     <div key={img.id} className="p-6 flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">

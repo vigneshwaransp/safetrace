@@ -32,8 +32,14 @@ export default function EvidenceVaultPage() {
 
   const loadEvidence = async () => {
     try {
-      const data = await api.getEvidenceItems(caseId);
-      setEvidence(data);
+      const vault = await api.getEvidenceVault(caseId);
+      const items = Array.isArray(vault?.items)
+        ? vault.items
+        : Array.isArray(vault)
+        ? vault
+        : [];
+      setEvidence(items);
+      setChainIntact(vault?.is_chain_valid !== false);
     } catch {
       setEvidence([]);
     } finally {
@@ -64,6 +70,8 @@ export default function EvidenceVaultPage() {
       setIsExporting(false);
     }
   };
+
+  const evidenceList = Array.isArray(evidence) ? evidence : [];
 
   return (
     <div className="min-h-[calc(100vh-64px)] py-10 px-6 md:px-12 bg-canvas">
@@ -125,25 +133,33 @@ export default function EvidenceVaultPage() {
         {/* Cryptographic Verification Status Banner */}
         <div className="mb-8 p-5 rounded-xl bg-surface-card border border-hairline flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-full bg-success/15 text-green-800 flex items-center justify-center flex-shrink-0">
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                chainIntact ? "bg-success/15 text-green-800" : "bg-error/15 text-red-800"
+              }`}
+            >
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-ink">
-                  Cryptographic Hash Chain: Intact & Verified
+                  Cryptographic Hash Chain: {chainIntact ? "Intact & Verified" : "Verification Failed"}
                 </h3>
-                <span className="text-[10px] bg-success/20 text-green-900 px-2 py-0.5 rounded-pill font-semibold">
-                  Valid
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-pill font-semibold ${
+                    chainIntact ? "bg-success/20 text-green-900" : "bg-error/20 text-red-900"
+                  }`}
+                >
+                  {chainIntact ? "Valid" : "Compromised"}
                 </span>
               </div>
               <p className="text-xs text-muted mt-0.5">
-                All {evidence.length} blocks verify mathematically from Genesis block. Tamper-proof timestamping
+                All {evidenceList.length} blocks verify mathematically from Genesis block. Tamper-proof timestamping
                 maintained in UTC.
               </p>
             </div>
           </div>
-          <BadgePill>{evidence.length} Blocks Locked</BadgePill>
+          <BadgePill>{evidenceList.length} Blocks Locked</BadgePill>
         </div>
 
         {/* Evidence Blocks Schedule */}
@@ -162,7 +178,7 @@ export default function EvidenceVaultPage() {
               <RefreshCw className="w-4 h-4 animate-spin text-brand-pink" />
               <span>Verifying ledger integrity...</span>
             </div>
-          ) : evidence.length === 0 ? (
+          ) : evidenceList.length === 0 ? (
             <div className="p-16 text-center flex flex-col items-center justify-center">
               <FileCheck2 className="w-10 h-10 text-muted-soft mb-3 stroke-1" />
               <h3 className="text-base font-semibold text-ink mb-1">Evidence vault is currently empty</h3>
@@ -176,13 +192,13 @@ export default function EvidenceVaultPage() {
             </div>
           ) : (
             <div className="divide-y divide-hairline">
-              {evidence.map((item) => (
+              {evidenceList.map((item, idx) => (
                 <div key={item.id} className="p-6 flex flex-col gap-4 hover:bg-surface-soft/40 transition-colors">
                   {/* Top Bar: Sequence, Number, Platform */}
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
                       <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-sm bg-ink text-white">
-                        BLOCK #{String(item.chain_sequence).padStart(4, "0")}
+                        BLOCK #{String(item.chain_sequence ?? idx + 1).padStart(4, "0")}
                       </span>
                       <span className="font-mono text-xs font-semibold px-2.5 py-1 rounded-sm bg-surface-strong text-ink">
                         {item.evidence_number}
@@ -195,7 +211,7 @@ export default function EvidenceVaultPage() {
                     <div className="flex items-center gap-2 text-xs text-muted">
                       <span>Captured UTC:</span>
                       <span className="font-mono text-ink">
-                        {new Date(item.captured_at).toISOString()}
+                        {new Date(item.captured_at).toUTCString()}
                       </span>
                     </div>
                   </div>

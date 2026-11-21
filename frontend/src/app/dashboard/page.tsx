@@ -86,10 +86,12 @@ export default function DashboardPage() {
   }
 
   // Aggregate stats
-  const totalCases = cases.length;
-  const totalImages = cases.reduce((acc, c) => acc + (c.image_count || c.images_count || 0), 0);
-  const totalMatches = cases.reduce((acc, c) => acc + (c.matches_count || 0), 0);
-  const totalEvidence = cases.reduce((acc, c) => acc + (c.evidence_count || 0), 0);
+  const safeCases = Array.isArray(cases) ? cases : [];
+  const safeNotifs = Array.isArray(notifications) ? notifications : [];
+  const totalCases = safeCases.length;
+  const totalImages = safeCases.reduce((acc, c) => acc + (c.image_count || c.images_count || 0), 0);
+  const totalMatches = safeCases.reduce((acc, c) => acc + (c.matches_count || 0), 0);
+  const totalEvidence = safeCases.reduce((acc, c) => acc + (c.evidence_count || 0), 0);
 
   return (
     <div className="min-h-[calc(100vh-64px)] py-10 px-6 md:px-12 bg-canvas">
@@ -138,7 +140,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Notifications / Takedown Updates Banner */}
-        {notifications.length > 0 && (
+        {safeNotifs.length > 0 && (
           <div className="mb-8 p-4 rounded-xl bg-brand-pink/10 border border-brand-pink/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-brand-pink text-white flex items-center justify-center flex-shrink-0">
@@ -146,9 +148,9 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h4 className="text-xs font-semibold text-ink">
-                  {notifications.length} New Monitoring Update{notifications.length > 1 ? "s" : ""}
+                  {safeNotifs.length} New Monitoring Update{safeNotifs.length > 1 ? "s" : ""}
                 </h4>
-                <p className="text-xs text-body leading-tight mt-0.5">{notifications[0].message}</p>
+                <p className="text-xs text-body leading-tight mt-0.5">{safeNotifs[0].message}</p>
               </div>
             </div>
             <button
@@ -214,7 +216,7 @@ export default function DashboardPage() {
             <BadgePill>{cases.length} Total</BadgePill>
           </div>
 
-          {cases.length === 0 ? (
+          {safeCases.length === 0 ? (
             <div className="p-12 text-center flex flex-col items-center justify-center">
               <div className="w-12 h-12 rounded-full bg-surface-card flex items-center justify-center mb-3 text-muted">
                 <Shield className="w-6 h-6 stroke-1" />
@@ -231,7 +233,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="divide-y divide-hairline">
-              {cases.map((c) => (
+              {safeCases.map((c) => (
                 <div
                   key={c.id}
                   className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:bg-surface-soft/40 transition-colors"

@@ -55,12 +55,15 @@ export default function ReportsPage() {
         api.getEvidenceItems(caseId).catch(() => []),
         api.getReports(caseId).catch(() => []),
       ]);
-      setEvidenceList(evData);
-      setReports(repData);
+      const safeEvList = Array.isArray(evData) ? evData : [];
+      const safeRepList = Array.isArray(repData) ? repData : [];
+      setEvidenceList(safeEvList);
+      setReports(safeRepList);
       // Select all by default
-      setSelectedEvidenceIds(evData.map((e) => e.id));
+      setSelectedEvidenceIds(safeEvList.map((e) => e.id));
     } catch {
-      // ignore
+      setEvidenceList([]);
+      setReports([]);
     } finally {
       setIsLoading(false);
     }

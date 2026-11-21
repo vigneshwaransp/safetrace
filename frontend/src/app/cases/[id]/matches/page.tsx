@@ -71,18 +71,20 @@ export default function MatchReviewPage() {
     }
   };
 
-  const filteredMatches = matches.filter((m) => {
+  const safeMatches = Array.isArray(matches) ? matches : [];
+
+  const filteredMatches = safeMatches.filter((m) => {
     if (filter === "ALL") return true;
     const s = m.status || m.review_status;
     if (filter === "PENDING_REVIEW") return s === "PENDING_REVIEW" || s === "UNREVIEWED";
     return s === filter;
   });
 
-  const pendingCount = matches.filter((m) => {
+  const pendingCount = safeMatches.filter((m) => {
     const s = m.status || m.review_status;
     return s === "PENDING_REVIEW" || s === "UNREVIEWED";
   }).length;
-  const confirmedCount = matches.filter((m) => (m.status || m.review_status) === "CONFIRMED").length;
+  const confirmedCount = safeMatches.filter((m) => (m.status || m.review_status) === "CONFIRMED").length;
 
   return (
     <div className="min-h-[calc(100vh-64px)] py-10 px-6 md:px-12 bg-canvas">

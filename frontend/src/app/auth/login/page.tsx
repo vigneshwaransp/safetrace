@@ -23,12 +23,14 @@ export default function LoginPage() {
       await login(email, password);
       router.push("/dashboard");
     } catch (err: any) {
-      const msg =
-        typeof err?.message === "string"
-          ? err.message
-          : typeof err?.detail === "string"
-          ? err.detail
-          : "Failed to log in. Please check your credentials.";
+      let msg = "Failed to log in. Please check your credentials.";
+      if (typeof err?.message === "string" && err.message !== "[object Object]") {
+        msg = err.message;
+      } else if (typeof err?.detail === "string") {
+        msg = err.detail;
+      } else if (Array.isArray(err?.detail)) {
+        msg = err.detail.map((d: any) => d.msg || JSON.stringify(d)).join(", ");
+      }
       setError(msg);
     } finally {
       setIsLoading(false);
