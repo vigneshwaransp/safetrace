@@ -155,12 +155,12 @@ export default function CaseDetailsPage() {
           <div>
             <div className="flex items-center gap-2 mb-1.5">
               <span className="font-mono text-xs font-semibold text-ink px-2 py-0.5 rounded-sm bg-surface-strong">
-                {caseData.case_number}
+                {caseData.case_number || `CASE-${caseData.id.slice(0, 8).toUpperCase()}`}
               </span>
               <span className="text-xs px-2.5 py-0.5 rounded-pill bg-brand-teal/10 text-brand-teal font-medium">
                 {caseData.status}
               </span>
-              {caseData.is_anonymous && (
+              {(caseData.is_anonymous || caseData.is_pseudonymous) && (
                 <span className="text-xs px-2.5 py-0.5 rounded-pill bg-surface-card border border-hairline text-muted">
                   Anonymous Vault
                 </span>
@@ -293,7 +293,7 @@ export default function CaseDetailsPage() {
                           <Fingerprint className="w-4 h-4 text-brand-pink" />
                           <span className="text-sm font-medium text-ink">{img.original_filename}</span>
                           <span className="text-xs text-muted">
-                            ({(img.file_size_bytes / 1024).toFixed(1)} KB)
+                            ({(((img.file_size_bytes || img.file_size || 0) / 1024)).toFixed(1)} KB)
                           </span>
                         </div>
                         <div className="flex items-center gap-2">

@@ -73,11 +73,16 @@ export default function MatchReviewPage() {
 
   const filteredMatches = matches.filter((m) => {
     if (filter === "ALL") return true;
-    return m.status === filter;
+    const s = m.status || m.review_status;
+    if (filter === "PENDING_REVIEW") return s === "PENDING_REVIEW" || s === "UNREVIEWED";
+    return s === filter;
   });
 
-  const pendingCount = matches.filter((m) => m.status === "PENDING_REVIEW").length;
-  const confirmedCount = matches.filter((m) => m.status === "CONFIRMED").length;
+  const pendingCount = matches.filter((m) => {
+    const s = m.status || m.review_status;
+    return s === "PENDING_REVIEW" || s === "UNREVIEWED";
+  }).length;
+  const confirmedCount = matches.filter((m) => (m.status || m.review_status) === "CONFIRMED").length;
 
   return (
     <div className="min-h-[calc(100vh-64px)] py-10 px-6 md:px-12 bg-canvas">
@@ -210,7 +215,7 @@ export default function MatchReviewPage() {
                         <span className="font-semibold text-xs px-2.5 py-0.5 rounded-pill bg-surface-strong text-ink uppercase tracking-wider">
                           {m.platform}
                         </span>
-                        <ConfidenceBadge confidence={m.confidence} />
+                        <ConfidenceBadge confidence={(m.confidence || m.confidence_band || "HIGH") as any} />
                       </div>
 
                       <div>
@@ -255,12 +260,12 @@ export default function MatchReviewPage() {
                       </div>
 
                       {/* Matching Reasons */}
-                      {m.matching_reasons && m.matching_reasons.length > 0 && (
+                      {((m.matching_reasons && m.matching_reasons.length > 0) || (m.match_reasons && m.match_reasons.length > 0)) && (
                         <div className="bg-surface-card rounded-md p-2.5 border border-hairline text-[11px] text-body space-y-1">
                           <span className="font-medium text-ink block text-[10px] uppercase tracking-wider">
                             Detection Analysis:
                           </span>
-                          {m.matching_reasons.map((r, idx) => (
+                          {(m.matching_reasons || m.match_reasons || []).map((r, idx) => (
                             <div key={idx} className="flex items-center gap-1.5 text-muted">
                               <span className="w-1 h-1 rounded-full bg-brand-pink" />
                               <span>{r}</span>
@@ -273,7 +278,7 @@ export default function MatchReviewPage() {
 
                   {/* Review Actions Footer */}
                   <div className="p-4 bg-surface-soft/60 border-t border-hairline">
-                    {m.status === "CONFIRMED" ? (
+                    {(m.status === "CONFIRMED" || m.review_status === "CONFIRMED") ? (
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-green-800 font-semibold flex items-center gap-1 bg-success/15 px-3 py-1 rounded-pill border border-success/30">
                           <Check className="w-3.5 h-3.5" />

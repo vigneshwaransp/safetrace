@@ -225,7 +225,7 @@ export default function EvidenceVaultPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                       <span className="text-muted text-[10px] uppercase">Captured Content SHA-256:</span>
                       <span className="text-ink truncate max-w-sm text-[11px] font-semibold">
-                        {item.captured_sha256}
+                        {item.captured_sha256 || item.content_sha256 || "N/A"}
                       </span>
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1 border-t border-hairline">

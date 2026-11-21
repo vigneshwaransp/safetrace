@@ -325,9 +325,9 @@ export default function ReportsPage() {
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-xs px-2.5 py-1 rounded-pill bg-brand-teal text-white uppercase tracking-wider">
-                            {rep.platform}
+                            {rep.platform || rep.recipient_platform || "PLATFORM"}
                           </span>
-                          <StatusBadge status={rep.status} />
+                          <StatusBadge status={rep.status as any} />
                           {rep.platform_ticket_id && (
                             <span className="font-mono text-xs text-muted bg-surface-card px-2 py-0.5 rounded border border-hairline">
                               Ticket: {rep.platform_ticket_id}
@@ -336,7 +336,7 @@ export default function ReportsPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {rep.has_pdf && (
+                          {(rep.has_pdf || rep.pdf_storage_path) && (
                             <a
                               href={api.getReportPdfUrl(rep.id)}
                               target="_blank"
@@ -373,7 +373,7 @@ export default function ReportsPage() {
                         </button>
 
                         <button
-                          onClick={() => handleCopyNotice(rep.report_text, rep.id)}
+                          onClick={() => handleCopyNotice(rep.report_text || rep.report_content || "", rep.id)}
                           className="text-xs font-semibold text-body hover:text-ink flex items-center gap-1"
                         >
                           {copiedId === rep.id ? (
@@ -438,7 +438,7 @@ export default function ReportsPage() {
                   </button>
                 </div>
                 <pre className="text-xs font-mono text-body whitespace-pre-wrap max-h-72 overflow-y-auto bg-canvas p-4 rounded-md border border-hairline leading-relaxed">
-                  {selectedReportView.report_text}
+                  {selectedReportView.report_text || selectedReportView.report_content}
                 </pre>
               </div>
             )}

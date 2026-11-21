@@ -87,7 +87,7 @@ export default function DashboardPage() {
 
   // Aggregate stats
   const totalCases = cases.length;
-  const totalImages = cases.reduce((acc, c) => acc + (c.images_count || 0), 0);
+  const totalImages = cases.reduce((acc, c) => acc + (c.image_count || c.images_count || 0), 0);
   const totalMatches = cases.reduce((acc, c) => acc + (c.matches_count || 0), 0);
   const totalEvidence = cases.reduce((acc, c) => acc + (c.evidence_count || 0), 0);
 
@@ -239,12 +239,12 @@ export default function DashboardPage() {
                   <div className="space-y-1.5 max-w-lg">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs font-semibold text-ink px-2 py-0.5 rounded-sm bg-surface-strong">
-                        {c.case_number}
+                        {c.case_number || `CASE-${c.id.slice(0, 8).toUpperCase()}`}
                       </span>
                       <span className="text-xs px-2.5 py-0.5 rounded-pill bg-brand-teal/10 text-brand-teal font-medium">
                         {c.status}
                       </span>
-                      {c.is_anonymous && (
+                      {(c.is_anonymous || c.is_pseudonymous) && (
                         <span className="text-[11px] text-muted flex items-center gap-1">
                           • Anonymous Case
                         </span>
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                       </Link>
                     </h3>
                     <p className="text-xs text-muted line-clamp-1">
-                      {c.summary || "No description provided."}
+                      {c.summary || c.description || "No description provided."}
                     </p>
                     <div className="flex items-center gap-4 text-[11px] text-muted-soft pt-1">
                       <span>Created: {new Date(c.created_at).toLocaleDateString()}</span>
