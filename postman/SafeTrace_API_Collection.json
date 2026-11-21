@@ -1,0 +1,397 @@
+{
+  "info": {
+    "_postman_id": "7fa84d2a-89a1-4cf1-a3f2-safetrace01",
+    "name": "SafeTrace API Collection (v1)",
+    "description": "Comprehensive Postman test collection for SafeTrace: A victim-centric digital safety platform for non-consensual image abuse discovery, cryptographic evidence preservation, and automated takedown reporting.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register Survivor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"victim_new@example.com\",\n  \"password\": \"VictimPass123!\",\n  \"full_name\": \"Maya Sharma\",\n  \"role\": \"VICTIM\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Login (Victim)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.environment.set(\"accessToken\", jsonData.access_token);",
+                  "    pm.environment.set(\"refreshToken\", jsonData.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "username", "value": "victim@example.com", "type": "text" },
+                { "key": "password", "value": "VictimPass123!", "type": "text" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Get Current User Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
+          }
+        },
+        {
+          "name": "Refresh Access Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Case Management",
+      "item": [
+        {
+          "name": "List Cases",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (Array.isArray(jsonData) && jsonData.length > 0) {",
+                  "    pm.environment.set(\"caseId\", jsonData[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/cases", "host": ["{{baseUrl}}"], "path": ["cases"] }
+          }
+        },
+        {
+          "name": "Create Protected Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Unauthorized image leaks on Telegram & Reddit\",\n  \"description\": \"Private photographs shared in confidence were morphed and circulated without consent.\",\n  \"is_pseudonymous\": true,\n  \"pseudonym\": \"Anonymous Survivor\",\n  \"retain_encrypted_originals\": false\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/cases", "host": ["{{baseUrl}}"], "path": ["cases"] }
+          }
+        },
+        {
+          "name": "Get Case Details",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/cases/{{caseId}}", "host": ["{{baseUrl}}"], "path": ["cases", "{{caseId}}"] }
+          }
+        },
+        {
+          "name": "Upload Media & Compute Perceptual Hashes",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": [] },
+                { "key": "retain_encrypted", "value": "false", "type": "text" }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}/images",
+              "host": ["{{baseUrl}}"],
+              "path": ["cases", "{{caseId}}", "images"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Discovery & Matching",
+      "item": [
+        {
+          "name": "Trigger Discovery Sweep Across Platforms",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platforms\": [\"REDDIT\", \"X_TWITTER\", \"META\", \"WEB\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}/discover",
+              "host": ["{{baseUrl}}"],
+              "path": ["cases", "{{caseId}}", "discover"]
+            }
+          }
+        },
+        {
+          "name": "Get Discovery Jobs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}/discovery-jobs",
+              "host": ["{{baseUrl}}"],
+              "path": ["cases", "{{caseId}}", "discovery-jobs"]
+            }
+          }
+        },
+        {
+          "name": "Get Discovered Candidate Matches",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (Array.isArray(jsonData) && jsonData.length > 0) {",
+                  "    pm.environment.set(\"matchId\", jsonData[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}/matches",
+              "host": ["{{baseUrl}}"],
+              "path": ["cases", "{{caseId}}", "matches"]
+            }
+          }
+        },
+        {
+          "name": "Inspect Suspected URL Directly",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://reddit.com/r/leaks/comments/target123\",\n  \"platform\": \"REDDIT\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}/urls",
+              "host": ["{{baseUrl}}"],
+              "path": ["cases", "{{caseId}}", "urls"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Evidence Vault & Hash Chain",
+      "item": [
+        {
+          "name": "Review Match (Confirm & Write to Hash Chain)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CONFIRMED\",\n  \"notes\": \"Confirmed non-consensual violation exhibit.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/matches/{{matchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["matches", "{{matchId}}"]
+            }
+          }
+        },
+        {
+          "name": "List Cryptographic Evidence Blocks",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}/evidence",
+              "host": ["{{baseUrl}}"],
+              "path": ["cases", "{{caseId}}", "evidence"]
+            }
+          }
+        },
+        {
+          "name": "Export Evidence Hash Chain (JSON)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}/evidence/export",
+              "host": ["{{baseUrl}}"],
+              "path": ["cases", "{{caseId}}", "evidence", "export"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Bulk Reporting & PDF Dossier",
+      "item": [
+        {
+          "name": "Create Takedown Report & ReportLab PDF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.id) {",
+                  "    pm.environment.set(\"reportId\", jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"platform\": \"REDDIT\",\n  \"selected_evidence_ids\": [],\n  \"victim_name_alias\": \"Maya Sharma\",\n  \"custom_notes\": \"Demand urgent removal under IT Rules 2021 Rule 3(2)(b).\",\n  \"generate_pdf\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["cases", "{{caseId}}", "reports"]
+            }
+          }
+        },
+        {
+          "name": "List Case Reports",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/cases/{{caseId}}/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["cases", "{{caseId}}", "reports"]
+            }
+          }
+        },
+        {
+          "name": "Download Official PDF Dossier",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}/pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}", "pdf"]
+            }
+          }
+        },
+        {
+          "name": "Update Report Progression Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"new_status\": \"REMOVED\",\n  \"notes\": \"Platform removed infringing content within 24 hours.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reports/{{reportId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "{{reportId}}", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Monitoring & Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/notifications", "host": ["{{baseUrl}}"], "path": ["notifications"] }
+          }
+        },
+        {
+          "name": "Trigger Monitoring Sweep Check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/monitoring/trigger-check",
+              "host": ["{{baseUrl}}"],
+              "path": ["monitoring", "trigger-check"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Official Channels & Resources",
+      "item": [
+        {
+          "name": "Get Official Reporting Channels Directory",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/resources/official-channels",
+              "host": ["{{baseUrl}}"],
+              "path": ["resources", "official-channels"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "e4f8d9a2-5b12-4c8d-b0e1-safetraceenv01",
+  "name": "SafeTrace Local / Docker Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api/v1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "caseId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "matchId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "reportId",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

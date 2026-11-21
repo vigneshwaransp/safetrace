@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: safetrace_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-safetrace}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-safetrace_secure_password}
+      POSTGRES_DB: ${POSTGRES_DB:-safetrace_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-safetrace} -d ${POSTGRES_DB:-safetrace_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: safetrace_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: safetrace_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-safetrace}:${POSTGRES_PASSWORD:-safetrace_secure_password}@db:5432/${POSTGRES_DB:-safetrace_db}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-safetrace-insecure-secret-key-change-in-production-min-32-chars-long}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=}
+      - STORAGE_DIR=/app/storage
+    volumes:
+      - backend_storage:/app/storage
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: safetrace_celery_worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-safetrace}:${POSTGRES_PASSWORD:-safetrace_secure_password}@db:5432/${POSTGRES_DB:-safetrace_db}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-safetrace-insecure-secret-key-change-in-production-min-32-chars-long}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=}
+      - STORAGE_DIR=/app/storage
+    volumes:
+      - backend_storage:/app/storage
+    command: celery -A app.tasks.celery_app.celery_app worker --loglevel=info
+
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: safetrace_celery_beat
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - ENVIRONMENT=production
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY:-safetrace-insecure-secret-key-change-in-production-min-32-chars-long}
+    command: celery -A app.tasks.celery_app.celery_app beat --loglevel=info
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: safetrace_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - NEXT_PUBLIC_APP_NAME=SafeTrace
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_storage:
