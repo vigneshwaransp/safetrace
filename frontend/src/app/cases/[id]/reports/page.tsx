@@ -48,6 +48,7 @@ export default function ReportsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedReportView, setSelectedReportView] = useState<Report | null>(null);
   const [updatingReportId, setUpdatingReportId] = useState<string | null>(null);
+  const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
 
   const loadData = async () => {
     try {
@@ -127,6 +128,17 @@ export default function ReportsPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDownloadPdf = async (reportId: string, reportNumber?: string) => {
+    setDownloadingReportId(reportId);
+    try {
+      await api.downloadReportPdf(reportId, `SafeTrace_${reportNumber || reportId.slice(0, 8)}.pdf`);
+    } catch (err: any) {
+      alert(err.message || "Failed to download PDF dossier");
+    } finally {
+      setDownloadingReportId(null);
+    }
   };
 
   return (
@@ -339,16 +351,16 @@ export default function ReportsPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {(rep.has_pdf || rep.pdf_storage_path) && (
-                            <a
-                              href={api.getReportPdfUrl(rep.id)}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-3 py-1.5 bg-ink text-white text-xs font-semibold rounded-md hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-sm"
+                          {(rep.has_pdf || rep.pdf_available || rep.pdf_storage_path) && (
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadPdf(rep.id, rep.report_number)}
+                              disabled={downloadingReportId === rep.id}
+                              className="px-3 py-1.5 bg-ink text-white text-xs font-semibold rounded-md hover:bg-neutral-800 transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-60"
                             >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Download PDF Dossier</span>
-                            </a>
+                              <Download className={`w-3.5 h-3.5 ${downloadingReportId === rep.id ? "animate-spin text-brand-pink" : ""}`} />
+                              <span>{downloadingReportId === rep.id ? "Downloading..." : "Download PDF Dossier"}</span>
+                            </button>
                           )}
                         </div>
                       </div>
@@ -431,14 +443,25 @@ export default function ReportsPage() {
               <div className="bg-surface-card border border-hairline rounded-xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-3 pb-3 border-b border-hairline">
                   <h3 className="text-sm font-semibold text-ink">
-                    Takedown Grievance Text ({selectedReportView.platform})
+                    Takedown Grievance Text ({selectedReportView.recipient_platform || selectedReportView.platform})
                   </h3>
-                  <button
-                    onClick={() => setSelectedReportView(null)}
-                    className="text-xs text-muted hover:text-ink font-semibold"
-                  >
-                    Close Preview ✕
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPdf(selectedReportView.id, selectedReportView.report_number)}
+                      disabled={downloadingReportId === selectedReportView.id}
+                      className="px-2.5 py-1 bg-ink text-white text-xs font-medium rounded hover:bg-neutral-800 transition-colors flex items-center gap-1 shadow-sm"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>Download PDF</span>
+                    </button>
+                    <button
+                      onClick={() => setSelectedReportView(null)}
+                      className="text-xs text-muted hover:text-ink font-semibold ml-2"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
                 <pre className="text-xs font-mono text-body whitespace-pre-wrap max-h-72 overflow-y-auto bg-canvas p-4 rounded-md border border-hairline leading-relaxed">
                   {selectedReportView.report_text || selectedReportView.report_content}

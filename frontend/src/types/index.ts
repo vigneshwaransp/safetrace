@@ -128,6 +128,8 @@ export interface Report {
   id: string;
   case_id: string;
   report_number?: string;
+  report_type?: string;
+  title?: string;
   platform?: string;
   recipient_platform?: string | null;
   status: string;
@@ -138,6 +140,7 @@ export interface Report {
   submission_url?: string | null;
   statutory_basis?: string[] | null;
   has_pdf?: boolean;
+  pdf_available?: boolean;
   pdf_storage_path?: string | null;
   pdf_filename?: string | null;
   last_monitored_at?: string | null;
