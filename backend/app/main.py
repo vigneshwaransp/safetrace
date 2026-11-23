@@ -22,6 +22,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 async def lifespan(app: FastAPI):
     # Ensure storage directory exists on startup
     settings.storage_path.mkdir(parents=True, exist_ok=True)
+    # Ensure all DB tables are created
+    from app.db.base import Base
+    from app.db.session import engine
+    import app.models  # ensure models are registered
+    Base.metadata.create_all(bind=engine)
     yield
 
 
@@ -42,14 +47,14 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RateLimitMiddleware, requests_per_minute=180)
 
 # 3. Configure CORS
-if settings.BACKEND_CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.BACKEND_CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.BACKEND_CORS_ORIGINS if settings.BACKEND_CORS_ORIGINS else ["http://localhost:3000"],
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include API v1 Router
 app.include_router(api_router, prefix=settings.API_V1_STR)
